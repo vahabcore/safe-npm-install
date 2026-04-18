@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 
 import { parseArgs } from 'node:util';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { fetchPackageData, fetchDownloads } from './fetcher.js';
 import { analyze } from './analyzer.js';
 import { score } from './scorer.js';
@@ -33,14 +36,14 @@ function printHelp(): void {
 }
 
 function printVersion(): void {
-  console.log('safe-npm-install v1.0.0');
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const pkg = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf-8'));
+  console.log(`safe-npm-install v${pkg.version}`);
 }
 
 function validatePackageName(name: string): boolean {
-  // Basic npm package name validation
   if (!name || name.length > 214) return false;
   if (name.startsWith('.') || name.startsWith('_')) return false;
-  // Allow scoped packages @scope/name and regular names
   return /^(@[a-z0-9\-~][a-z0-9\-._~]*\/)?[a-z0-9\-~][a-z0-9\-._~]*$/.test(name);
 }
 
@@ -90,7 +93,7 @@ async function main(): Promise<void> {
     process.exit(2);
   }
 
-  // Validate all package names
+  // Validate package names
   for (const pkg of packages) {
     if (!validatePackageName(pkg)) {
       console.error(`Error: Invalid package name "${pkg}"`);
@@ -101,7 +104,7 @@ async function main(): Promise<void> {
   const reports: RiskReport[] = [];
   let hasHighRisk = false;
 
-  // Analyze packages concurrently (batch of up to 5)
+  // Analyze in batches
   const BATCH_SIZE = 5;
   for (let i = 0; i < packages.length; i += BATCH_SIZE) {
     const batch = packages.slice(i, i + BATCH_SIZE);

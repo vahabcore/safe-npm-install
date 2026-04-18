@@ -1,7 +1,7 @@
 {
     "name": "safe-npm-install",
     "version": "1.0.0",
-    "description": "Analyze npm packages for security risks before installing them",
+    "description": "Pre-install risk analysis for npm packages. Scores and blocks suspicious packages before they reach your node_modules.",
     "type": "module",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -12,7 +12,7 @@
         "dist"
     ],
     "scripts": {
-        "build": "tsc",
+        "build": "tsc && node scripts/postbuild.mjs",
         "dev": "tsc --watch",
         "lint": "eslint src/ tests/",
         "lint:fix": "eslint src/ tests/ --fix",

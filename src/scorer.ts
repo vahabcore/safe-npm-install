@@ -1,6 +1,5 @@
 import type { PackageSignals, RiskLevel, RiskReport, ScoreBreakdown } from './types.js';
 
-// ─── Weight distribution (must sum to 100) ───
 const WEIGHTS = {
   packageAge: 15,
   downloads: 20,
@@ -10,21 +9,17 @@ const WEIGHTS = {
   lastUpdated: 15,
 } as const;
 
-// ─── Thresholds ───
 const RISK_THRESHOLDS = {
-  safe: 70, // score >= 70 → safe
-  moderate: 40, // score >= 40 → moderate
-  // below 40 → high
+  safe: 70,
+  moderate: 40,
 } as const;
-
-// ─── Individual scoring functions (each returns 0–100) ───
 
 function scorePackageAge(days: number): number {
   if (days >= 365) return 100;
   if (days >= 180) return 80;
   if (days >= 30) return 60;
   if (days >= 7) return 30;
-  return 5; // less than a week — very suspicious
+  return 5;
 }
 
 function scoreDownloads(weekly: number): number {
@@ -75,11 +70,11 @@ function buildWarnings(signals: PackageSignals, breakdown: ScoreBreakdown): stri
   const warnings: string[] = [];
 
   if (signals.packageAgeDays < 7) {
-    warnings.push(`Package is only ${signals.packageAgeDays} day(s) old — very new`);
+    warnings.push(`Package is only ${signals.packageAgeDays} day(s) old`);
   }
   if (signals.hasInstallScripts) {
     warnings.push(
-      `Has install scripts: ${signals.installScriptNames.join(', ')} — can execute arbitrary code`,
+      `Has install scripts: ${signals.installScriptNames.join(', ')}`,
     );
   }
   if (signals.weeklyDownloads < 100) {
@@ -92,16 +87,12 @@ function buildWarnings(signals: PackageSignals, breakdown: ScoreBreakdown): stri
     warnings.push(`Large dependency tree (${signals.dependencyCount} deps)`);
   }
   if (signals.maintainerCount < 2) {
-    warnings.push('Single maintainer — higher bus-factor risk');
+    warnings.push('Single maintainer');
   }
 
   return warnings;
 }
 
-/**
- * Compute a risk score (0–100) and generate a report.
- * Higher score = safer.
- */
 export function score(signals: PackageSignals): RiskReport {
   const breakdown: ScoreBreakdown = {
     packageAge: scorePackageAge(signals.packageAgeDays),
