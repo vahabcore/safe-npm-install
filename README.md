@@ -5,7 +5,7 @@
 Pre-install risk analysis for npm packages.  
 Scores packages on real security signals and blocks suspicious installs before they reach your `node_modules`.
 
-[![CI](https://github.com/YOUR_USERNAME/safe-npm-install/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/safe-npm-install/actions/workflows/ci.yml)
+[![CI](https://github.com/vahabcore/safe-npm-install/actions/workflows/ci.yml/badge.svg)](https://github.com/vahabcore/safe-npm-install/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/safe-npm-install.svg)](https://www.npmjs.com/package/safe-npm-install)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
@@ -190,7 +190,7 @@ CLI Input
 ## Development
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/safe-npm-install.git
+git clone https://github.com/vahabcore/safe-npm-install.git
 cd safe-npm-install
 npm install
 npm run build
