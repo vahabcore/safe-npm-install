@@ -66,7 +66,7 @@ function getRiskLevel(score: number): RiskLevel {
   return 'high';
 }
 
-function buildWarnings(signals: PackageSignals, breakdown: ScoreBreakdown): string[] {
+function buildWarnings(signals: PackageSignals): string[] {
   const warnings: string[] = [];
 
   if (signals.packageAgeDays < 7) {
@@ -114,7 +114,7 @@ export function score(signals: PackageSignals): RiskReport {
   );
 
   const riskLevel = getRiskLevel(totalScore);
-  const warnings = buildWarnings(signals, breakdown);
+  const warnings = buildWarnings(signals);
 
   return {
     packageName: signals.packageName,
