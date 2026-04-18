@@ -35,15 +35,11 @@ async function fetchJson<T>(url: string): Promise<T> {
   }
 }
 
-/**
- * Fetch full package metadata from the npm registry.
- */
 export async function fetchPackageData(packageName: string): Promise<NpmPackageData> {
   const cacheKey = `pkg_${packageName}`;
   const cached = getCached<NpmPackageData>(cacheKey);
   if (cached) return cached;
 
-  // Encode scoped packages: @scope/name → @scope%2Fname
   const encoded = packageName.startsWith('@')
     ? `@${encodeURIComponent(packageName.slice(1))}`
     : encodeURIComponent(packageName);
@@ -53,9 +49,6 @@ export async function fetchPackageData(packageName: string): Promise<NpmPackageD
   return data;
 }
 
-/**
- * Fetch weekly download count from the npm downloads API.
- */
 export async function fetchDownloads(packageName: string): Promise<NpmDownloadData> {
   const cacheKey = `dl_${packageName}`;
   const cached = getCached<NpmDownloadData>(cacheKey);

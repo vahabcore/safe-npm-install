@@ -1,10 +1,8 @@
-// ─── npm Registry Data ───
-
 export interface NpmPackageData {
   name: string;
   version: string;
   description?: string;
-  time: Record<string, string>; // version → ISO date, plus "created" & "modified"
+  time: Record<string, string>;
   'dist-tags': Record<string, string>;
   versions: Record<string, NpmVersionData>;
   maintainers: NpmMaintainer[];
@@ -30,30 +28,18 @@ export interface NpmDownloadData {
   package: string;
 }
 
-// ─── Analysis Signals ───
-
 export interface PackageSignals {
   packageName: string;
   version: string;
-  /** Days since first publish */
   packageAgeDays: number;
-  /** Days since latest version publish */
   daysSinceLastUpdate: number;
-  /** Weekly download count */
   weeklyDownloads: number;
-  /** Whether preinstall/postinstall scripts exist */
   hasInstallScripts: boolean;
-  /** Names of detected install scripts */
   installScriptNames: string[];
-  /** Total production dependency count */
   dependencyCount: number;
-  /** Number of maintainers */
   maintainerCount: number;
-  /** Number of published versions */
   versionCount: number;
 }
-
-// ─── Scoring ───
 
 export type RiskLevel = 'safe' | 'moderate' | 'high';
 
@@ -75,8 +61,6 @@ export interface RiskReport {
   signals: PackageSignals;
   warnings: string[];
 }
-
-// ─── CLI Options ───
 
 export interface CliOptions {
   packages: string[];

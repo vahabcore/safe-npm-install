@@ -1,7 +1,5 @@
 import type { RiskReport } from './types.js';
 
-// ─── ANSI color helpers (zero dependencies) ───
-
 const RESET = '\x1b[0m';
 const BOLD = '\x1b[1m';
 const DIM = '\x1b[2m';
@@ -36,8 +34,6 @@ function bar(value: number, width = 20): string {
   const color = value >= 70 ? GREEN : value >= 40 ? YELLOW : RED;
   return `${color}${'█'.repeat(filled)}${DIM}${'░'.repeat(empty)}${RESET}`;
 }
-
-// ─── Public reporters ───
 
 export function reportText(report: RiskReport): string {
   const lines: string[] = [];

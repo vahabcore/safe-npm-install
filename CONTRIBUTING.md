@@ -1,6 +1,8 @@
 # Contributing to safe-npm-install
 
-Thanks for your interest in contributing! Here's how to get started.
+We welcome contributions. Whether it's a bug fix, a new detection signal, or a documentation improvement — it all helps.
+
+Here's how to get started.
 
 ## Development Setup
 
@@ -69,11 +71,12 @@ tests/
 
 ### What to Contribute
 
-- Bug fixes
 - New security signals
-- Improved scoring algorithms
-- Documentation improvements
-- Performance optimizations
+- Scoring algorithm improvements
+- Install script analysis
+- Bug fixes
+- Documentation
+- Performance improvements
 
 Check [Issues](../../issues) for `good first issue` labels.
 

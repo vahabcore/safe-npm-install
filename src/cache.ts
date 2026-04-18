@@ -17,7 +17,6 @@ function ensureCacheDir(): void {
 }
 
 function cacheKeyToFile(key: string): string {
-  // Sanitize key for filesystem safety
   const safe = key.replace(/[^a-zA-Z0-9_\-.@]/g, '_');
   return join(CACHE_DIR, `${safe}.json`);
 }
@@ -43,6 +42,6 @@ export function setCache<T>(key: string, data: T): void {
   try {
     writeFileSync(file, JSON.stringify(entry), 'utf-8');
   } catch {
-    // Silently fail — cache is best-effort
+    // Cache write is best-effort
   }
 }

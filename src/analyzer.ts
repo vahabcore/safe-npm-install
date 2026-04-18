@@ -7,9 +7,6 @@ function daysBetween(dateStr: string, now: Date): number {
   return Math.max(0, Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
-/**
- * Extract security-relevant signals from raw npm data.
- */
 export function analyze(
   pkg: NpmPackageData,
   downloads: NpmDownloadData,
@@ -18,19 +15,15 @@ export function analyze(
   const versionData = pkg.versions[latestVersion];
   const now = new Date();
 
-  // Package age
   const createdDate = pkg.time?.created;
   const packageAgeDays = createdDate ? daysBetween(createdDate, now) : 0;
 
-  // Last update
   const modifiedDate = pkg.time?.modified ?? pkg.time?.[latestVersion];
   const daysSinceLastUpdate = modifiedDate ? daysBetween(modifiedDate, now) : 999;
 
-  // Install scripts
   const scripts = versionData?.scripts ?? {};
   const installScriptNames = INSTALL_SCRIPT_KEYS.filter((key) => key in scripts);
 
-  // Dependencies
   const deps = versionData?.dependencies ?? {};
   const dependencyCount = Object.keys(deps).length;
 
