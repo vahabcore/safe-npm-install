@@ -1,4 +1,4 @@
-# Contributing to safe-npm-install
+# Contributing to safe-ins
 
 We welcome contributions. Whether it's a bug fix, a new detection signal, or a documentation improvement — it all helps.
 

@@ -38,7 +38,7 @@ function printHelp(): void {
 function printVersion(): void {
   const __dirname = dirname(fileURLToPath(import.meta.url));
   const pkg = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf-8'));
-  console.log(`safe-npm-install v${pkg.version}`);
+  console.log(`safe-ins v${pkg.version}`);
 }
 
 function validatePackageName(name: string): boolean {

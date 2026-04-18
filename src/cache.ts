@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 
-const CACHE_DIR = join(homedir(), '.safe-npm-install', 'cache');
+const CACHE_DIR = join(homedir(), '.safe-ins', 'cache');
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
 interface CacheEntry<T> {

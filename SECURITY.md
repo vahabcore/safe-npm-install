@@ -29,4 +29,4 @@ Or use [GitHub's private vulnerability reporting](https://docs.github.com/en/cod
 - **Initial assessment**: within 1 week
 - **Fix & disclosure**: coordinated with reporter
 
-Thank you for helping keep `safe-npm-install` secure.
+Thank you for helping keep `safe-ins` secure.

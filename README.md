@@ -1,12 +1,12 @@
 <div align="center">
 
-# safe-npm-install
+# safe-ins
 
 Pre-install risk analysis for npm packages.  
 Scores packages on real security signals and blocks suspicious installs before they reach your `node_modules`.
 
 [![CI](https://github.com/vahabcore/safe-npm-install/actions/workflows/ci.yml/badge.svg)](https://github.com/vahabcore/safe-npm-install/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/safe-npm-install.svg)](https://www.npmjs.com/package/safe-npm-install)
+[![npm version](https://img.shields.io/npm/v/safe-ins.svg)](https://www.npmjs.com/package/safe-ins)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
 </div>
@@ -19,18 +19,18 @@ Scores packages on real security signals and blocks suspicious installs before t
 
 There's no built-in way to evaluate whether a package is trustworthy **before** you install it. This tool fills that gap.
 
-`safe-npm-install` checks six security signals against the npm registry and gives you a risk score (0–100) before anything is written to disk.
+`safe-ins` checks six security signals against the npm registry and gives you a risk score (0–100) before anything is written to disk.
 
 ## Install
 
 ```bash
-npm install -g safe-npm-install
+npm install -g safe-ins
 ```
 
 Or run directly:
 
 ```bash
-npx safe-npm-install express
+npx safe-ins express
 ```
 
 ## Usage
@@ -52,7 +52,7 @@ safe-ins --json express
 ### Example output
 
 ```
-  safe-npm-install  Package Risk Report
+  safe-ins  Package Risk Report
   ────────────────────────────────────────────────
   Package:    express@4.21.0
   Risk Score: ████████████████░░░░ 82/100  [SAFE]
@@ -108,7 +108,7 @@ Install scripts carry the highest weight because they execute arbitrary code dur
 Use it as a library in your own tools:
 
 ```typescript
-import { fetchPackageData, fetchDownloads, analyze, score } from 'safe-npm-install';
+import { fetchPackageData, fetchDownloads, analyze, score } from 'safe-ins';
 
 const [pkg, dl] = await Promise.all([
   fetchPackageData('express'),
@@ -145,13 +145,13 @@ All types (`RiskReport`, `RiskLevel`, `PackageSignals`, `ScoreBreakdown`, etc.) 
 
 ```yaml
 - name: Check package safety
-  run: npx safe-npm-install --strict --json $(cat packages-to-install.txt)
+  run: npx safe-ins --strict --json $(cat packages-to-install.txt)
 ```
 
 ### Pipeline example
 
 ```bash
-RESULT=$(npx safe-npm-install --json some-pkg)
+RESULT=$(npx safe-ins --json some-pkg)
 RISK=$(echo "$RESULT" | jq -r '.[0].riskLevel')
 if [ "$RISK" = "high" ]; then
   echo "Blocked: high-risk package"
@@ -182,7 +182,7 @@ CLI Input
 | `analyzer` | Extracts structured security signals from raw API responses |
 | `scorer` | Applies weighted scoring to produce a 0–100 risk score |
 | `reporter` | Formats output for terminal or JSON |
-| `cache` | File-based TTL cache (15 min) under `~/.safe-npm-install/cache/` |
+| `cache` | File-based TTL cache (15 min) under `~/.safe-ins/cache/` |
 | `cli` | Argument parsing, validation, orchestration |
 
 ---
