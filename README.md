@@ -37,16 +37,16 @@ npx safe-npm-install express
 
 ```bash
 # Analyze a package
-safe-install express
+safe-ins express
 
 # Analyze multiple packages
-safe-install lodash axios chalk
+safe-ins lodash axios chalk
 
 # Strict mode: exit code 1 on high-risk packages (for CI)
-safe-install --strict some-unknown-pkg
+safe-ins --strict some-unknown-pkg
 
 # JSON output for pipelines
-safe-install --json express
+safe-ins --json express
 ```
 
 ### Example output

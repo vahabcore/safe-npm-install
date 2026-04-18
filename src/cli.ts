@@ -14,9 +14,9 @@ const HELP = `
   safe-npm-install — Analyze npm packages for security risks before installing
 
   Usage:
-    safe-install <package> [package2 ...]   Analyze one or more packages
-    safe-install --strict <package>          Block install if risk is high
-    safe-install --json <package>            Output JSON (for CI/CD)
+    safe-ins <package> [package2 ...]   Analyze one or more packages
+    safe-ins --strict <package>          Block install if risk is high
+    safe-ins --json <package>            Output JSON (for CI/CD)
 
   Options:
     --strict, -s    Exit with code 1 if any package is high risk
@@ -25,10 +25,10 @@ const HELP = `
     --version, -v   Show version
 
   Examples:
-    safe-install express
-    safe-install lodash axios chalk
-    safe-install --strict some-unknown-pkg
-    safe-install --json express | jq .
+    safe-ins express
+    safe-ins lodash axios chalk
+    safe-ins --strict some-unknown-pkg
+    safe-ins --json express | jq .
 `;
 
 function printHelp(): void {
@@ -71,7 +71,7 @@ async function main(): Promise<void> {
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error(`Error: ${msg}\nRun safe-install --help for usage.`);
+    console.error(`Error: ${msg}\nRun safe-ins --help for usage.`);
     process.exit(2);
   }
 
@@ -89,7 +89,7 @@ async function main(): Promise<void> {
   }
 
   if (packages.length === 0) {
-    console.error('Error: No packages specified.\nRun safe-install --help for usage.');
+    console.error('Error: No packages specified.\nRun safe-ins --help for usage.');
     process.exit(2);
   }
 

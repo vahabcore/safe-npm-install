@@ -1,12 +1,12 @@
 {
-    "name": "safe-npm-install",
+    "name": "@vahabcore/safe-npm-install",
     "version": "1.0.0",
     "description": "Pre-install risk analysis for npm packages. Scores and blocks suspicious packages before they reach your node_modules.",
     "type": "module",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "bin": {
-        "safe-install": "dist/cli.js"
+        "safe-ins": "dist/cli.js"
     },
     "files": [
         "dist"
