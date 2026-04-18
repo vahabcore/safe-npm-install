@@ -8,7 +8,7 @@ Here's how to get started.
 
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/safe-npm-install.git
+git clone https://github.com/vahabcore/safe-npm-install.git
 cd safe-npm-install
 
 # Install dependencies
