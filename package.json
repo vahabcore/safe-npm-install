@@ -1,6 +1,6 @@
 {
     "name": "safe-npm-install",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "Detect risky npm packages before installation by checking scripts, release freshness, and trust signals.",
     "type": "module",
     "main": "./dist/index.js",
