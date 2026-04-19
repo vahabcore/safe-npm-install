@@ -14,6 +14,16 @@ const RISK_THRESHOLDS = {
   moderate: 40,
 } as const;
 
+function pushUnique(target: string[], value: string): void {
+  if (!target.includes(value)) {
+    target.push(value);
+  }
+}
+
+function formatNumber(value: number): string {
+  return value.toLocaleString('en-US');
+}
+
 function scorePackageAge(days: number): number {
   if (days >= 365) return 100;
   if (days >= 180) return 80;
@@ -53,11 +63,13 @@ function scoreMaintainerTrust(maintainerCount: number, versionCount: number): nu
 }
 
 function scoreLastUpdated(daysSince: number): number {
-  if (daysSince <= 30) return 100;
-  if (daysSince <= 90) return 85;
-  if (daysSince <= 180) return 65;
-  if (daysSince <= 365) return 40;
-  return 15;
+  if (daysSince <= 2) return 15;
+  if (daysSince <= 7) return 30;
+  if (daysSince <= 30) return 55;
+  if (daysSince <= 180) return 90;
+  if (daysSince <= 365) return 75;
+  if (daysSince <= 730) return 45;
+  return 20;
 }
 
 function getRiskLevel(score: number): RiskLevel {
@@ -67,30 +79,79 @@ function getRiskLevel(score: number): RiskLevel {
 }
 
 function buildWarnings(signals: PackageSignals): string[] {
-  const warnings: string[] = [];
+  const warnings = [...signals.riskSignals];
 
-  if (signals.packageAgeDays < 7) {
-    warnings.push(`Package is only ${signals.packageAgeDays} day(s) old`);
+  if (signals.packageAgeDays < 30) {
+    pushUnique(warnings, `Package is only ${signals.packageAgeDays} day(s) old`);
   }
-  if (signals.hasInstallScripts) {
-    warnings.push(
-      `Has install scripts: ${signals.installScriptNames.join(', ')}`,
+
+  if (signals.latestVersionAgeDays < 7) {
+    pushUnique(warnings, `Latest release was published ${signals.latestVersionAgeDays} day(s) ago`);
+  } else if (signals.latestVersionAgeDays < 30) {
+    pushUnique(
+      warnings,
+      `Latest release is still fresh (${signals.latestVersionAgeDays} day(s) old)`,
     );
   }
+
+  if (signals.hasInstallScripts) {
+    pushUnique(
+      warnings,
+      `Install-time scripts detected: ${signals.installScriptNames.join(', ')}`,
+    );
+  }
+
   if (signals.weeklyDownloads < 100) {
-    warnings.push(`Very low weekly downloads (${signals.weeklyDownloads})`);
+    pushUnique(warnings, `Very low weekly downloads (${formatNumber(signals.weeklyDownloads)})`);
   }
+
   if (signals.daysSinceLastUpdate > 365) {
-    warnings.push(`Not updated in over a year (${signals.daysSinceLastUpdate} days)`);
+    pushUnique(warnings, `No release in over a year (${signals.daysSinceLastUpdate} days)`);
   }
+
   if (signals.dependencyCount > 25) {
-    warnings.push(`Large dependency tree (${signals.dependencyCount} deps)`);
+    pushUnique(warnings, `Large direct dependency tree (${signals.dependencyCount} deps)`);
   }
+
   if (signals.maintainerCount < 2) {
-    warnings.push('Single maintainer');
+    pushUnique(warnings, 'Single maintainer');
+  }
+
+  if (signals.latestVersionIsPrerelease) {
+    pushUnique(warnings, 'Latest release is a prerelease');
   }
 
   return warnings;
+}
+
+function buildPositives(signals: PackageSignals): string[] {
+  const positives = [...signals.trustSignals];
+
+  if (signals.weeklyDownloads >= 100_000) {
+    pushUnique(positives, `Popular package (${formatNumber(signals.weeklyDownloads)} weekly downloads)`);
+  }
+
+  if (!signals.hasInstallScripts) {
+    pushUnique(positives, 'No install-time scripts on the latest release');
+  }
+
+  if (signals.maintainerCount >= 2) {
+    pushUnique(positives, `${signals.maintainerCount} maintainers listed`);
+  }
+
+  if (signals.packageAgeDays >= 365) {
+    pushUnique(positives, 'Package has been on npm for over a year');
+  }
+
+  if (signals.versionCount >= 10) {
+    pushUnique(positives, `Established release history (${signals.versionCount} versions)`);
+  }
+
+  if (signals.latestVersionAgeDays >= 30 && signals.latestVersionAgeDays <= 365) {
+    pushUnique(positives, 'Latest release has had time for ecosystem scrutiny');
+  }
+
+  return positives;
 }
 
 export function score(signals: PackageSignals): RiskReport {
@@ -115,6 +176,7 @@ export function score(signals: PackageSignals): RiskReport {
 
   const riskLevel = getRiskLevel(totalScore);
   const warnings = buildWarnings(signals);
+  const positives = buildPositives(signals);
 
   return {
     packageName: signals.packageName,
@@ -123,6 +185,8 @@ export function score(signals: PackageSignals): RiskReport {
     riskLevel,
     breakdown,
     signals,
+    positives,
     warnings,
+    recommendation: signals.recommendation,
   };
 }

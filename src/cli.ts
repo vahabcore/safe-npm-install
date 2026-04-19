@@ -11,12 +11,12 @@ import { reportText, reportJson } from './reporter.js';
 import type { RiskReport } from './types.js';
 
 const HELP = `
-  safe-npm-install — Analyze npm packages for security risks before installing
+  safe-npm-install — Detect risky npm packages before installation
 
   Usage:
-    safe-ins <package> [package2 ...]   Analyze one or more packages
-    safe-ins --strict <package>          Block install if risk is high
-    safe-ins --json <package>            Output JSON (for CI/CD)
+    safe-npm-install <package> [package2 ...]   Analyze one or more packages
+    safe-npm-install --strict <package>          Block install if risk is high
+    safe-npm-install --json <package>            Output JSON (for CI/CD)
 
   Options:
     --strict, -s    Exit with code 1 if any package is high risk
@@ -25,10 +25,10 @@ const HELP = `
     --version, -v   Show version
 
   Examples:
-    safe-ins express
-    safe-ins lodash axios chalk
-    safe-ins --strict some-unknown-pkg
-    safe-ins --json express | jq .
+    safe-npm-install express
+    safe-npm-install lodash axios chalk
+    safe-npm-install --strict some-unknown-pkg
+    safe-npm-install --json express | jq .
 `;
 
 function printHelp(): void {
@@ -38,7 +38,7 @@ function printHelp(): void {
 function printVersion(): void {
   const __dirname = dirname(fileURLToPath(import.meta.url));
   const pkg = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf-8'));
-  console.log(`safe-ins v${pkg.version}`);
+  console.log(`safe-npm-install v${pkg.version}`);
 }
 
 function validatePackageName(name: string): boolean {
@@ -57,6 +57,42 @@ async function analyzePackage(packageName: string): Promise<RiskReport> {
   return score(signals);
 }
 
+function buildFetchFailureReport(packageName: string, errorMessage: string): RiskReport {
+  return {
+    packageName,
+    version: 'unknown',
+    score: 0,
+    riskLevel: 'high',
+    breakdown: {
+      packageAge: 0,
+      downloads: 0,
+      installScripts: 0,
+      dependencyCount: 0,
+      maintainerTrust: 0,
+      lastUpdated: 0,
+    },
+    signals: {
+      packageName,
+      version: 'unknown',
+      packageAgeDays: 0,
+      daysSinceLastUpdate: 999,
+      latestVersionAgeDays: 999,
+      latestVersionIsPrerelease: false,
+      weeklyDownloads: 0,
+      hasInstallScripts: false,
+      installScriptNames: [],
+      dependencyCount: 0,
+      maintainerCount: 0,
+      versionCount: 0,
+      trustSignals: [],
+      riskSignals: [`Failed to fetch data: ${errorMessage}`],
+      versionSnapshots: [],
+    },
+    positives: [],
+    warnings: [`Failed to fetch data: ${errorMessage}`],
+  };
+}
+
 async function main(): Promise<void> {
   let args;
   try {
@@ -71,7 +107,7 @@ async function main(): Promise<void> {
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error(`Error: ${msg}\nRun safe-ins --help for usage.`);
+    console.error(`Error: ${msg}\nRun safe-npm-install --help for usage.`);
     process.exit(2);
   }
 
@@ -89,7 +125,7 @@ async function main(): Promise<void> {
   }
 
   if (packages.length === 0) {
-    console.error('Error: No packages specified.\nRun safe-ins --help for usage.');
+    console.error('Error: No packages specified.\nRun safe-npm-install --help for usage.');
     process.exit(2);
   }
 
@@ -108,6 +144,13 @@ async function main(): Promise<void> {
   const BATCH_SIZE = 5;
   for (let i = 0; i < packages.length; i += BATCH_SIZE) {
     const batch = packages.slice(i, i + BATCH_SIZE);
+
+    if (!json) {
+      for (const pkg of batch) {
+        console.log(`\n🔍 Checking ${pkg}...`);
+      }
+    }
+
     const batchResults = await Promise.allSettled(batch.map((pkg) => analyzePackage(pkg)));
 
     for (let j = 0; j < batchResults.length; j++) {
@@ -123,33 +166,7 @@ async function main(): Promise<void> {
         if (!json) {
           console.error(`\x1b[31m  ✗ Failed to analyze "${pkgName}": ${errMsg}\x1b[0m`);
         } else {
-          reports.push({
-            packageName: pkgName,
-            version: 'unknown',
-            score: 0,
-            riskLevel: 'high',
-            breakdown: {
-              packageAge: 0,
-              downloads: 0,
-              installScripts: 0,
-              dependencyCount: 0,
-              maintainerTrust: 0,
-              lastUpdated: 0,
-            },
-            signals: {
-              packageName: pkgName,
-              version: 'unknown',
-              packageAgeDays: 0,
-              daysSinceLastUpdate: 999,
-              weeklyDownloads: 0,
-              hasInstallScripts: false,
-              installScriptNames: [],
-              dependencyCount: 0,
-              maintainerCount: 0,
-              versionCount: 0,
-            },
-            warnings: [`Failed to fetch data: ${errMsg}`],
-          });
+          reports.push(buildFetchFailureReport(pkgName, errMsg));
           hasHighRisk = true;
         }
       }
@@ -162,6 +179,20 @@ async function main(): Promise<void> {
   } else {
     for (const report of reports) {
       console.log(reportText(report));
+    }
+
+    if (reports.length > 1) {
+      const summary = reports.reduce(
+        (acc, report) => {
+          acc[report.riskLevel] += 1;
+          return acc;
+        },
+        { safe: 0, moderate: 0, high: 0 },
+      );
+
+      console.log(
+        `Summary: ${summary.safe} safe, ${summary.moderate} moderate, ${summary.high} high`,
+      );
     }
   }
 

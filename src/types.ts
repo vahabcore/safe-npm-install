@@ -33,12 +33,18 @@ export interface PackageSignals {
   version: string;
   packageAgeDays: number;
   daysSinceLastUpdate: number;
+  latestVersionAgeDays: number;
+  latestVersionIsPrerelease: boolean;
   weeklyDownloads: number;
   hasInstallScripts: boolean;
   installScriptNames: string[];
   dependencyCount: number;
   maintainerCount: number;
   versionCount: number;
+  trustSignals: string[];
+  riskSignals: string[];
+  versionSnapshots: VersionSnapshot[];
+  recommendation?: VersionRecommendation;
 }
 
 export type RiskLevel = 'safe' | 'moderate' | 'high';
@@ -52,6 +58,23 @@ export interface ScoreBreakdown {
   lastUpdated: number;
 }
 
+export interface VersionSnapshot {
+  version: string;
+  publishedAt?: string;
+  ageDays: number;
+  hasInstallScripts: boolean;
+  installScriptNames: string[];
+  dependencyCount: number;
+  isPrerelease: boolean;
+}
+
+export interface VersionRecommendation {
+  version: string;
+  publishedAt?: string;
+  ageDays: number;
+  reasons: string[];
+}
+
 export interface RiskReport {
   packageName: string;
   version: string;
@@ -59,7 +82,9 @@ export interface RiskReport {
   riskLevel: RiskLevel;
   breakdown: ScoreBreakdown;
   signals: PackageSignals;
+  positives: string[];
   warnings: string[];
+  recommendation?: VersionRecommendation;
 }
 
 export interface CliOptions {

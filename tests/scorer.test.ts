@@ -1,6 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import { score } from '../src/scorer.js';
-import type { PackageSignals } from '../src/types.js';
+import type { PackageSignals, VersionSnapshot } from '../src/types.js';
+
+function makeSnapshots(version = '1.0.0'): VersionSnapshot[] {
+  return [
+    {
+      version,
+      publishedAt: '2024-01-01T00:00:00.000Z',
+      ageDays: 120,
+      hasInstallScripts: false,
+      installScriptNames: [],
+      dependencyCount: 2,
+      isPrerelease: false,
+    },
+  ];
+}
 
 function makeSignals(overrides: Partial<PackageSignals> = {}): PackageSignals {
   return {
@@ -8,12 +22,17 @@ function makeSignals(overrides: Partial<PackageSignals> = {}): PackageSignals {
     version: '1.0.0',
     packageAgeDays: 400,
     daysSinceLastUpdate: 10,
+    latestVersionAgeDays: 10,
+    latestVersionIsPrerelease: false,
     weeklyDownloads: 500_000,
     hasInstallScripts: false,
     installScriptNames: [],
     dependencyCount: 2,
     maintainerCount: 3,
     versionCount: 20,
+    trustSignals: [],
+    riskSignals: [],
+    versionSnapshots: makeSnapshots(),
     ...overrides,
   };
 }
@@ -35,12 +54,12 @@ describe('scorer', () => {
     );
     expect(risky.score).toBeLessThan(safe.score);
     expect(risky.warnings).toEqual(
-      expect.arrayContaining([expect.stringContaining('install scripts')]),
+      expect.arrayContaining([expect.stringContaining('Install-time scripts detected')]),
     );
   });
 
   it('penalizes very new packages', () => {
-    const report = score(makeSignals({ packageAgeDays: 2 }));
+    const report = score(makeSignals({ packageAgeDays: 2, latestVersionAgeDays: 2 }));
     expect(report.breakdown.packageAge).toBeLessThanOrEqual(10);
     expect(report.warnings).toEqual(
       expect.arrayContaining([expect.stringContaining('day(s) old')]),
@@ -56,10 +75,10 @@ describe('scorer', () => {
   });
 
   it('penalizes abandoned packages', () => {
-    const report = score(makeSignals({ daysSinceLastUpdate: 500 }));
-    expect(report.breakdown.lastUpdated).toBeLessThanOrEqual(15);
+    const report = score(makeSignals({ daysSinceLastUpdate: 500, latestVersionAgeDays: 500 }));
+    expect(report.breakdown.lastUpdated).toBeLessThanOrEqual(45);
     expect(report.warnings).toEqual(
-      expect.arrayContaining([expect.stringContaining('Not updated')]),
+      expect.arrayContaining([expect.stringContaining('No release')]),
     );
   });
 
@@ -80,6 +99,7 @@ describe('scorer', () => {
     const report = score(
       makeSignals({
         packageAgeDays: 1,
+        latestVersionAgeDays: 1,
         weeklyDownloads: 2,
         hasInstallScripts: true,
         installScriptNames: ['preinstall', 'postinstall'],
@@ -97,6 +117,7 @@ describe('scorer', () => {
     const extremeLow = score(
       makeSignals({
         packageAgeDays: 0,
+        latestVersionAgeDays: 0,
         weeklyDownloads: 0,
         hasInstallScripts: true,
         installScriptNames: ['postinstall'],
@@ -118,5 +139,20 @@ describe('scorer', () => {
     const report = score(makeSignals({ packageName: 'my-pkg', version: '2.3.4' }));
     expect(report.packageName).toBe('my-pkg');
     expect(report.version).toBe('2.3.4');
+  });
+
+  it('preserves a recommendation in the final report', () => {
+    const report = score(
+      makeSignals({
+        recommendation: {
+          version: '0.9.0',
+          publishedAt: '2024-01-01T00:00:00.000Z',
+          ageDays: 90,
+          reasons: ['latest release is only 2 day(s) old'],
+        },
+      }),
+    );
+
+    expect(report.recommendation?.version).toBe('0.9.0');
   });
 });

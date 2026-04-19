@@ -1,191 +1,214 @@
 <div align="center">
 
-# safe-ins
+# safe-npm-install
 
-Pre-install risk analysis for npm packages.  
-Scores packages on real security signals and blocks suspicious installs before they reach your `node_modules`.
+Detect risky npm packages before installation by checking install scripts, release freshness, and trust signals.
 
 [![CI](https://github.com/vahabcore/safe-npm-install/actions/workflows/ci.yml/badge.svg)](https://github.com/vahabcore/safe-npm-install/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/safe-ins.svg)](https://www.npmjs.com/package/safe-ins)
+[![npm version](https://img.shields.io/npm/v/safe-npm-install.svg)](https://www.npmjs.com/package/safe-npm-install)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
 </div>
 
----
+## Problem
 
-## Why
+Malicious npm packages are a real supply chain risk.
 
-`npm audit` only reports vulnerabilities **after** packages are installed. By that point, a malicious `postinstall` script has already run.
+Attackers abuse install-time hooks like `preinstall` and `postinstall`, publish suspiciously fresh versions, and rely on trust gaps before the ecosystem notices. By the time `npm audit` runs, the package may already be in `node_modules` and its install script may already have executed.
 
-There's no built-in way to evaluate whether a package is trustworthy **before** you install it. This tool fills that gap.
+safe-npm-install is built for the question developers actually ask before installing a package:
 
-`safe-ins` checks six security signals against the npm registry and gives you a risk score (0–100) before anything is written to disk.
+"What if this package or its newest release is malicious?"
+
+## What It Checks
+
+safe-npm-install evaluates real pre-install signals from the npm registry:
+
+- Install-time scripts such as `preinstall`, `install`, and `postinstall`
+- Fresh releases that have not had much ecosystem scrutiny yet
+- Package age and release history
+- Weekly download volume
+- Maintainer count
+- Direct dependency count
+
+It then produces a risk score and, when the latest release looks risky, recommends a safer historical version to pin instead of leaving you with a vague warning.
 
 ## Install
 
 ```bash
-npm install -g safe-ins
+npm install -g safe-npm-install
 ```
 
-Or run directly:
+Or run it directly:
 
 ```bash
-npx safe-ins express
+npx safe-npm-install express
 ```
 
-## Usage
+## Quick Usage
 
 ```bash
-# Analyze a package
-safe-ins express
-
-# Analyze multiple packages
-safe-ins lodash axios chalk
-
-# Strict mode: exit code 1 on high-risk packages (for CI)
-safe-ins --strict some-unknown-pkg
-
-# JSON output for pipelines
-safe-ins --json express
+safe-npm-install express
+safe-npm-install lodash axios chalk
+safe-npm-install --strict some-unknown-pkg
+safe-npm-install --json express
 ```
 
-### Example output
+## Example Output
 
+```text
+🔍 Checking axios...
+
+  safe-npm-install  npm package risk check
+  --------------------------------------------------------
+  Package: axios@1.7.0
+  ⚠ Risk: Moderate (58/100) [MODERATE]
+
+  ✔ Popular package (18,000,000 weekly downloads)
+  ✔ Package has been on npm for over a year
+  ✔ 2 maintainers listed
+
+  ⚠ Install-time scripts detected: postinstall
+  ⚠ Latest release was published 2 day(s) ago
+
+  Recommendation
+  → Prefer axios@1.6.8
+    Stable candidate published 96 day(s) ago without install-time scripts.
+    - latest release runs install-time scripts (postinstall)
+    - latest release is only 2 day(s) old
+
+  Score breakdown
+    Package Age       ███████████████  100
+    Downloads         ███████████████   90
+    Install Scripts   ██░░░░░░░░░░░░░   10
+    Dependencies      ████████████░░░   85
+    Maintainer Trust  ███████████████  100
+    Release Freshness ████████░░░░░░░   55
+  --------------------------------------------------------
 ```
-  safe-ins  Package Risk Report
-  ────────────────────────────────────────────────
-  Package:    express@4.21.0
-  Risk Score: ████████████████░░░░ 82/100  [SAFE]
 
-  Breakdown:
-    Package Age      ███████████████  100
-    Downloads        ███████████████  100
-    Install Scripts  ███████████████  100
-    Dependencies     ██████████░░░░░   65
-    Maintainer Trust ███████████████  100
-    Last Updated     █████████████░░   85
-  ────────────────────────────────────────────────
-```
+## Why The Recommendation Feature Matters
 
-### Options
+Most tools stop at "this package looks risky."
+
+safe-npm-install goes one step further:
+
+- It flags risky latest releases.
+- It looks through version history.
+- It recommends a safer, more mature version when one exists.
+
+That makes it an installation assistant, not just a checker.
+
+## CLI Options
 
 | Flag | Short | Description |
-|---|---|---|
+| --- | --- | --- |
 | `--strict` | `-s` | Exit with code 1 if any package is high risk |
-| `--json` | `-j` | Output results as JSON |
+| `--json` | `-j` | Output JSON for CI/CD or pipelines |
 | `--help` | `-h` | Show help |
 | `--version` | `-v` | Show version |
 
----
+## Risk Model
 
-## Risk Scoring
+Each package receives a score from 0 to 100, where higher means safer.
 
-Each package is scored 0–100 (higher = safer) based on six weighted signals:
-
-| Signal | Weight | What it checks |
-|---|---|---|
-| Package Age | 15% | How long the package has existed on npm |
-| Weekly Downloads | 20% | Download volume as a popularity indicator |
-| Install Scripts | 25% | Presence of `preinstall` / `postinstall` hooks |
-| Dependency Count | 10% | Number of production dependencies |
-| Maintainer Trust | 15% | Maintainer count and version history |
-| Last Updated | 15% | How recently the package was published |
-
-Install scripts carry the highest weight because they execute arbitrary code during `npm install` — the primary vector for supply chain attacks.
+| Signal | Weight | Why it matters |
+| --- | --- | --- |
+| Package Age | 15% | Very new packages have less trust history |
+| Weekly Downloads | 20% | Real usage is a useful trust signal |
+| Install Scripts | 25% | Install hooks can execute arbitrary code |
+| Dependency Count | 10% | Large trees increase attack surface |
+| Maintainer Trust | 15% | More maintainers and release history improve trust |
+| Release Freshness | 15% | Extremely fresh releases are riskier; abandoned releases are also suspicious |
 
 ### Risk Levels
 
 | Score | Level | Meaning |
-|---|---|---|
-| 70–100 | Safe | Well-established, trusted package |
-| 40–69 | Moderate | Some concerns, review before installing |
-| 0–39 | High Risk | Blocked in strict mode |
-
----
+| --- | --- | --- |
+| 70-100 | Safe | Strong trust signals, low immediate concern |
+| 40-69 | Moderate | Review before installing |
+| 0-39 | High | Block in strict mode |
 
 ## Programmatic API
 
-Use it as a library in your own tools:
+```ts
+import { fetchPackageData, fetchDownloads, analyze, score } from 'safe-npm-install';
 
-```typescript
-import { fetchPackageData, fetchDownloads, analyze, score } from 'safe-ins';
-
-const [pkg, dl] = await Promise.all([
-  fetchPackageData('express'),
-  fetchDownloads('express'),
+const [pkg, downloads] = await Promise.all([
+  fetchPackageData('axios'),
+  fetchDownloads('axios'),
 ]);
 
-const signals = analyze(pkg, dl);
+const signals = analyze(pkg, downloads);
 const report = score(signals);
 
-console.log(report.score);       // 82
-console.log(report.riskLevel);   // 'safe'
-console.log(report.warnings);    // []
-console.log(report.breakdown);   // { packageAge: 100, downloads: 100, ... }
+console.log(report.score);
+console.log(report.riskLevel);
+console.log(report.warnings);
+console.log(report.recommendation);
 ```
 
 ### Exports
 
 | Function | Description |
-|---|---|
+| --- | --- |
 | `fetchPackageData(name)` | Fetch package metadata from the npm registry |
-| `fetchDownloads(name)` | Fetch weekly download count |
-| `analyze(pkg, downloads)` | Extract security signals from raw data |
-| `score(signals)` | Compute risk score and generate a report |
-| `reportText(report)` | Format a report as colored terminal output |
-| `reportJson(reports)` | Format reports as a JSON string |
+| `fetchDownloads(name)` | Fetch last-week download counts |
+| `analyze(pkg, downloads)` | Extract risk and trust signals from registry data |
+| `score(signals)` | Compute a final report and risk level |
+| `reportText(report)` | Format a terminal-friendly report |
+| `reportJson(reports)` | Format JSON output |
 
-All types (`RiskReport`, `RiskLevel`, `PackageSignals`, `ScoreBreakdown`, etc.) are exported for TypeScript users.
+## JSON Output
 
----
+JSON output includes more than the score. It also contains:
 
-## CI/CD Integration
+- `warnings` for risky signals
+- `positives` for trust signals
+- `recommendation` when a safer stable version is available
+- `breakdown` for weighted score factors
 
-### GitHub Actions
+That makes it usable in CI, internal developer tooling, and install policy automation.
+
+## CI/CD
 
 ```yaml
 - name: Check package safety
-  run: npx safe-ins --strict --json $(cat packages-to-install.txt)
+  run: npx safe-npm-install --strict --json $(cat packages-to-install.txt)
 ```
 
-### Pipeline example
+Example shell gate:
 
 ```bash
-RESULT=$(npx safe-ins --json some-pkg)
+RESULT=$(npx safe-npm-install --json some-pkg)
 RISK=$(echo "$RESULT" | jq -r '.[0].riskLevel')
+
 if [ "$RISK" = "high" ]; then
   echo "Blocked: high-risk package"
   exit 1
 fi
 ```
 
----
-
 ## Architecture
 
-```
+```text
 CLI Input
-   │
-   ▼
-┌──────────┐    ┌────────────┐    ┌──────────┐    ┌────────────┐
-│  Fetcher  │───▶│  Analyzer  │───▶│  Scorer  │───▶│  Reporter  │
-└──────────┘    └────────────┘    └──────────┘    └────────────┘
-       │
-   ┌───▼───┐
-   │ Cache  │
-   └───────┘
+   |
+   v
+Fetcher -> Analyzer -> Scorer -> Reporter
+   |
+   v
+ Cache
 ```
 
 | Module | Role |
-|---|---|
-| `fetcher` | Fetches registry metadata and download stats with timeouts and caching |
-| `analyzer` | Extracts structured security signals from raw API responses |
-| `scorer` | Applies weighted scoring to produce a 0–100 risk score |
-| `reporter` | Formats output for terminal or JSON |
-| `cache` | File-based TTL cache (15 min) under `~/.safe-ins/cache/` |
-| `cli` | Argument parsing, validation, orchestration |
-
----
+| --- | --- |
+| `fetcher` | Retrieves npm registry metadata and download counts |
+| `analyzer` | Extracts release signals and safer-version recommendations |
+| `scorer` | Weighs trust and risk signals into a final score |
+| `reporter` | Produces terminal and JSON output |
+| `cache` | Stores a short-lived cache under `~/.safe-npm-install/cache/` |
+| `cli` | Parses arguments and orchestrates analysis |
 
 ## Development
 
@@ -195,43 +218,20 @@ cd safe-npm-install
 npm install
 npm run build
 npm test
+npm run lint
 ```
-
-### Project Structure
-
-```
-src/
-├── cli.ts            CLI entry point
-├── index.ts          Public API exports
-├── fetcher.ts        npm registry data fetching
-├── analyzer.ts       Signal extraction
-├── scorer.ts         Risk scoring engine
-├── reporter.ts       Output formatting
-├── cache.ts          File-based cache
-└── types.ts          TypeScript types
-tests/
-├── scorer.test.ts
-└── analyzer.test.ts
-scripts/
-└── postbuild.mjs     Adds shebang to CLI build output
-```
-
----
 
 ## Roadmap
 
-- [x] CLI with risk scoring
-- [x] Strict mode for CI/CD
+- [x] Pre-install risk scoring
+- [x] Strict mode for CI
 - [x] JSON output
-- [x] Programmatic API
+- [x] Safer-version recommendation
 - [x] File-based caching
-- [ ] Scan entire `package.json` dependencies
-- [ ] GitHub repo analysis (stars, commits, issues)
-- [ ] Script sandbox mode
-- [ ] Behavioral pattern detection
-- [ ] VS Code extension
-
----
+- [ ] Analyze every dependency in a local package.json
+- [ ] Add GitHub repository trust signals
+- [ ] Add organization allowlists and policy files
+- [ ] Export SARIF or machine-readable policy violations
 
 ## Contributing
 

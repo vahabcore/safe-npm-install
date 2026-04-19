@@ -1,11 +1,12 @@
 {
-    "name": "safe-ins",
-    "version": "1.0.0",
-    "description": "Pre-install risk analysis for npm packages. Scores and blocks suspicious packages before they reach your node_modules.",
+    "name": "safe-npm-install",
+    "version": "1.1.0",
+    "description": "Detect risky npm packages before installation by checking scripts, release freshness, and trust signals.",
     "type": "module",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "bin": {
+        "safe-npm-install": "dist/cli.js",
         "safe-ins": "dist/cli.js"
     },
     "files": [
@@ -27,12 +28,23 @@
         "security",
         "cli",
         "supply-chain",
+        "supply-chain-security",
         "audit",
         "risk",
-        "safe-ins"
+        "safe-npm-install",
+        "malware-detection",
+        "postinstall"
     ],
     "author": "",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/vahabcore/safe-npm-install.git"
+    },
+    "homepage": "https://github.com/vahabcore/safe-npm-install#readme",
+    "bugs": {
+        "url": "https://github.com/vahabcore/safe-npm-install/issues"
+    },
     "devDependencies": {
         "@eslint/js": "^9.0.0",
         "@types/node": "^20.11.0",

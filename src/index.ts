@@ -7,6 +7,8 @@ export type {
   RiskLevel,
   PackageSignals,
   ScoreBreakdown,
+  VersionRecommendation,
+  VersionSnapshot,
   NpmPackageData,
   NpmDownloadData,
   CliOptions,

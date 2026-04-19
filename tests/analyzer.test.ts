@@ -44,6 +44,9 @@ describe('analyzer', () => {
     expect(signals.dependencyCount).toBe(1);
     expect(signals.maintainerCount).toBe(2);
     expect(signals.versionCount).toBe(1);
+    expect(signals.trustSignals).toEqual(
+      expect.arrayContaining([expect.stringContaining('Popular package')]),
+    );
   });
 
   it('detects install scripts', () => {
@@ -96,5 +99,46 @@ describe('analyzer', () => {
     });
     const signals = analyze(pkg, makeDlData());
     expect(signals.dependencyCount).toBe(0);
+  });
+
+  it('recommends an older stable version when the latest release is fresh and has install scripts', () => {
+    const now = new Date();
+    const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString();
+    const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
+    const pkg = makePkgData({
+      'dist-tags': { latest: '1.1.0' },
+      time: {
+        created: '2022-01-01T00:00:00.000Z',
+        modified: twoDaysAgo,
+        '1.0.0': ninetyDaysAgo,
+        '1.1.0': twoDaysAgo,
+      },
+      versions: {
+        '1.0.0': {
+          name: 'test-pkg',
+          version: '1.0.0',
+          scripts: {},
+          dependencies: {},
+        },
+        '1.1.0': {
+          name: 'test-pkg',
+          version: '1.1.0',
+          scripts: { postinstall: 'node setup.js' },
+          dependencies: {},
+        },
+      },
+    });
+
+    const signals = analyze(pkg, makeDlData());
+
+    expect(signals.version).toBe('1.1.0');
+    expect(signals.latestVersionAgeDays).toBeLessThanOrEqual(2);
+    expect(signals.riskSignals).toEqual(
+      expect.arrayContaining([expect.stringContaining('Install-time scripts detected')]),
+    );
+    expect(signals.recommendation?.version).toBe('1.0.0');
+    expect(signals.recommendation?.reasons).toEqual(
+      expect.arrayContaining([expect.stringContaining('install-time scripts')]),
+    );
   });
 });
